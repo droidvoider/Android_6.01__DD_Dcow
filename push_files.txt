@@ -1,0 +1,2 @@
+if=/cache/recovery/boot_push.img of=/dev/block/platform/15570000.ufs/by-name/BOOT bs=8388608|/data/local/tmp/boot_push.img|/cache/recovery/boot_push.img
+if=/cache/recovery/recovery_push.img of=/dev/block/platform/15570000.ufs/by-name/RECOVERY bs=8388608|/data/local/tmp/recovery_push.img|/cache/recovery/recovery_push.img

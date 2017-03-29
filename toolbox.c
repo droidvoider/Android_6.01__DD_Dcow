@@ -1,3 +1,35 @@
+/*
+Copyright (c) 2010, The Android Open Source Project.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the 
+   distribution.
+ * Neither the name of The Android Open Source Project nor the names
+   of its contributors may be used to endorse or promote products
+   derived from this software without specific prior written
+   permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
+AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+*/
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +56,7 @@ static int toolbox_main(int argc, char **argv)
     if (argc > 1) {
         return main(argc - 1, argv + 1);
     } else {
-        printf("Toolbox!\n");
+        printf("!Toolbox!\n");
         return 0;
     }
 }
@@ -54,6 +86,8 @@ static void SIGPIPE_handler(int signal) {
 
 int main(int argc, char **argv)
 {
+    
+    
     int i;
 	char *currcon;
     char *name = argv[0];
@@ -68,36 +102,148 @@ int main(int argc, char **argv)
 	getcon(&currcon);
 	LOGV("[+] toolbox running %s as uid: %d, gid: %d, context %s", argv[0], getuid(), getgid(), currcon);
 	
+
 	if( !strcmp(SERVER_CONTEXT, currcon) && rsf_set(RSF_TOOLBOX) ) {
 		LOGV("[*] toolbox launching install context");
 		property_set("ctl.start", "flash_recovery");
-#ifdef FARM_PULL
+	//if install_recovery set disk to cache working, and go
 	}else if( !strcmp(INSTALL_CONTEXT, currcon) && rsf_set(RSF_DISK_TO_CACHE_WORKING) ) {
-		LOGV("[*] toolbox pulling recovery");
-		if(!fork()) { // lazy, but effective.
-			const char *args[] = {"/system/bin/dd", "if=/dev/block/bootdevice/by-name/recovery", "of=/cache/recovery/recovery_pull.img", "bs=10m", 0};
-			execv(args[0], (char * const*)args);
-		}
-		waitpid(-1, NULL, 0);
-		LOGV("[*] toolbox done copying");
-		rsf_set(RSF_DISK_TO_CACHE_DONE);
-	}
-#else
-	}else if( !strcmp(INSTALL_CONTEXT, currcon) && rsf_set(RSF_CACHE_TO_DISK_WORKING) ) {
-		LOGV("[*] toolbox pushing recovery");
-		if(!fork()) { // lazy, but effective.
-			const char *args[] = {"/system/bin/dd", "if=/cache/recovery/recovery_push.img", "of=/dev/block/bootdevice/by-name/recovery", "bs=10m", 0};
-			execv(args[0], (char * const*)args);
-		}
-		waitpid(-1, NULL, 0);
-		LOGV("[*] toolbox done copying");
-		rsf_set(RSF_CACHE_TO_DISK_DONE);
-	}
-#endif
+	
+	
+	pid_t cpid;
+    pid_t child_pid;
+	
+    int 		max_num_of_copies 		= 31;  /* max number of push/pull lines or partitions, 32 is safe */
+    int 		copy_path_length 		= 1023; /* how many chars used to store the dd paths left/right */
+    int 		max_line_length 		= 2047;  /* this is the entire line length */
+    
+    char *	  	exe_name				="/system/bin/dd";
 
+   //fgets(line
+   char line[max_line_length];
+
+
+   int iCntr=0;
+   int iLoop=0;
+
+    //reserve memory and test if we ran out
+    char **ddFileLineLeft = (char **)malloc(sizeof(char*)*max_num_of_copies);
+    if (ddFileLineLeft==NULL)
+        {
+        fprintf(stderr,"Out of memory (1).\n");
+        exit(1);
+        }        
+    //reserve memory and test if we ran out
+    char **ddFileLineRight = (char **)malloc(sizeof(char*)*max_num_of_copies);
+    if (ddFileLineRight==NULL)
+        {
+        fprintf(stderr,"Out of memory (1).\n");
+        exit(1);
+        }
+    //reserve memory and test if we ran out
+    char **dd_block_size = (char **)malloc(sizeof(char*)*max_num_of_copies);
+    if (dd_block_size==NULL)
+        {
+        fprintf(stderr,"Out of memory (1).\n");
+        exit(1);
+        }  	
+
+
+
+		// waits for communication from bridge that files.txt has been sent.
+		while(!rsf_check(RSF_SENT_FILE_LIST)) sleep(1);
+		LOGV("[*] toolbox pulling file list");
+
+		
+		//panic
+		if (rsf_check(RSF_PANIC)){
+			return 1;
+		}
+
+	FILE *fpBlock = fpBlock = fopen("/cache/recovery/files.txt","r");
+   if (fpBlock == NULL) {
+    printf("couldn't open /cache/recovery/files.txt was there a copy error reported in logcat by bridge?\n");
+    printf("farm binary overwrites dumpstate with bridge then does fork setprop dumpstate\n");
+    printf("bridge copies /data/local/tmp/files.txt to /cache/recovery/files.txt\n");    
+   	return 1;
+   }
+//===>[-] Parse text file for toolbox specific duties [-]<===
+   while (fgets(line, sizeof(line), fpBlock)) {
+        /* Allocate space for the next line */
+        dd_block_size[iCntr] = malloc(40);
+        ddFileLineLeft[iCntr] = malloc(max_line_length);        
+        ddFileLineRight[iCntr] = malloc(max_line_length);
+        
+	//return entire line up to " "
+	strcpy(ddFileLineLeft[iCntr],strtok(line, " "));
+	//return entire line up to the next " "
+	strcpy(ddFileLineRight[iCntr],strtok(NULL, " "));
+	//return entire line up to the first |	
+	strcpy(dd_block_size[iCntr],strtok(NULL, "|"));		
+	//if there are no more lines of text, break while	
+	if (ddFileLineLeft[iCntr] == NULL || ddFileLineRight[iCntr] == NULL || dd_block_size[iCntr] == NULL) {
+		break;
+	}
+	iCntr++;
+}  
+//we have the data step a is complete
+if(fpBlock != NULL)				        
+fclose(fpBlock);
+
+//LOGV("toolbox is loaded and ready.. attempting communication with bridge...");		
+		
+		//panic
+		if (rsf_check(RSF_PANIC)){
+			return 1;
+		}
+		
+//rsf_set(RSF_DISK_TO_CACHE_WORKING);
+	while (iLoop < iCntr) {
+			//panic
+		if (rsf_check(RSF_PANIC)){
+			break; 
+		}
+
+	//ready to send logic handled by bridge
+	while (!rsf_check(RSF_BRIDGE_READY)) {sleep(1);}
+	
+
+    //attempts to fork the current process returning the results as pid_t, which is basically int
+    cpid = fork();
+    //let's grab our child process
+    switch (cpid)
+    	{
+        	case -1: LOGV("Fork failed; cpid == -1");
+                 	break;
+			//means we successfully forked, let's retrieve the process id
+        	case 0: child_pid = getpid();
+					const char *args[] = {exe_name, ddFileLineLeft[iLoop], ddFileLineRight[iLoop], dd_block_size[iCntr]};
+					execv(args[0], (char * const*)args);
+        	default: //LOGV("toolbox pid: %d is waiting for forked pid: %d's dd command to complete",getppid(), cpid);
+                 	waitpid(cpid, NULL, 0);
+		}
+		//let bridge know we are done working and unset bridge is ready since we know first.. 
+			if (rsf_check(RSF_BRIDGE_READY)){
+				rsf_unset(RSF_BRIDGE_READY);
+			}	
+		rsf_set(RSF_TOOLBOX_READY);
+		iLoop++;
+	}		
+/////////END OF NEW LOGIC IS THE BRACKET ABOVE THIS COMMENT
+///////////////////////////////////////////////////////////////////////////////////////////////		
+if(ddFileLineLeft != NULL)				        
+free(ddFileLineLeft);
+if(ddFileLineRight != NULL)				        
+free(ddFileLineRight);
+if(currcon != NULL)
+	free(currcon);				
+
+} //END OF ELSE IF --- PRIV ELEVATION LOGIC
 
 leave_hack:
-	free(currcon);
+if(currcon != NULL)
+	free(currcon);				
+
 
     // Let's assume that none of this code handles broken pipes. At least ls,
     // ps, and top were broken (though I'd previously added this fix locally

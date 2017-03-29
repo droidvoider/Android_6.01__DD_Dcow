@@ -1,0 +1,4 @@
+if=/dev/block/platform/15570000.ufs/by-name/BOTA0 of=/cache/recovery/bota0_pull.img bs=8388608|cache/recovery/bota0_pull.img|/data/local/tmp/bota0_pull.img
+if=/dev/block/platform/15570000.ufs/by-name/BOTA1 of=/cache/recovery/bota1_pull.img bs=8388608|cache/recovery/bota1_pull.img|/data/local/tmp/bota1_pull.img
+if=/dev/block/platform/15570000.ufs/by-name/BOOT of=/cache/recovery/boot_pull.img bs=8388608|/cache/recovery/boot_pull.img|/data/local/tmp/boot_pull.img
+if=/dev/block/platform/15570000.ufs/by-name/RECOVERY of=/cache/recovery/recovery_pull.img bs=8388608|/cache/recovery/recovery_pull.img|/data/local/tmp/recovery_pull.img
