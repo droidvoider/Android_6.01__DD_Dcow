@@ -41,6 +41,9 @@ Sub notes: directory taken from pull_files.txt ---> (if=/dev/block/platform/1557
 ```bash command from ubuntu with ndk installed
 4. make pull or make push respectively
 
+5. You can block size but don't use short hand!! bs=8388608 is correct but bs=8m is wrong
+(must use bytes for dd block size!!)
+
 **See Makefile for basic process of how things work.
 **VERY VERY IMPORTANT NOTE:**
 Additionally please notice that you can set the block size for transfers.. You can NOT use bs=10m for 10 megabytes.. It must be written in bytes
