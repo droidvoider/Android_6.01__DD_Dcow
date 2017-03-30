@@ -1,4 +1,4 @@
-**STERN DEVELOPER WARNING: PROCESS WILL NOT REINITIATE UNTIL AFTER IT HAS RAN**
+**STERN DEVELOPER WARNING: PROCESS WILL NOT REINITIATE UNTIL AFTER IT HAS REBOOTED**
 **STERN DEVELOPER WARNING: YOU MUST REBOOT BEFORE YOU MAY READ/WRITE AGAIN**
 
 
@@ -9,7 +9,7 @@
 **WARNING THIS IS LITERALLY THE MOST DANGEROUS ANDROID TOOLS I'VE EVER SEEN!!!**
 This tool writes to the partitions on 64bit Android 6.01 dirtycow vulnerable devices. It
 does so without verifying anything. It will write whatever you tell it to write without
-even blinking!! So if you write your recipe for chicken soup to your BOTA0 partition
+even blinking!! So if you write your recipe for chicken soup to your BOTA0/BOTA1 partition
 your device is hisory..
 
 ------------------------------------------------------------------------------------------------
@@ -34,23 +34,22 @@ are included along with this tool.
 
 1. Download the github repo.
 2. Open pull_files.txt see the if=/dev/block path then adb shell to your device to confirm path.
-Note: For example: ```bash
+Note: For example: run this from a shell
 adb shell then cd /dev/block/platform/15570000.ufs/by-name/ then ls -la
 Sub notes: directory taken from pull_files.txt ---> (if=/dev/block/platform/15570000.ufs/by-name/BOTA0)
 3. Confirm the Allow MTP message on your device BEFORE continuing or not at all.., before is best
-```bash command from ubuntu with ndk installed
+bash command from ubuntu with ndk installed (not all binaries present -- currently req. compile)
 4. make pull or make push respectively
-
-5. You can block size but don't use short hand!! bs=8388608 is correct but bs=8m is wrong
-(must use bytes for dd block size!!)
-
-**See Makefile for basic process of how things work.
-**VERY VERY IMPORTANT NOTE:**
-Additionally please notice that you can set the block size for transfers.. You can NOT use bs=10m for 10 megabytes.. It must be written in bytes
+5. You must specify block size but don't use short hand!! bs=8388608 is correct but bs=8m is wrong
+(must use bytes for dd block size!!) -- all fields are required to run i think, i woudnn't leave out block size
+I will say this again though!!! Please notice that you can set the block size for transfers.. You can NOT use bs=10m for 10 megabytes.. It must be written in bytes
 (the example is approximately bs=8m, again never use m values with my binaries it will fail)
 
 
+**See Makefile for basic process of how things work.
+**VERY VERY IMPORTANT NOTE:**
 
+**LIST OF COMMANDS**
 
 ## Showing the status
 ```bash
