@@ -4,28 +4,20 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-//toolbox pull
-const char *RSF_DISK_TO_CACHE_WORKING = "/cache/recovery/.disk_to_cache_working";
+//=>] run once logic [<=
+//likely needed with till, no sources avail. this was taken from the pull sections it grabs us root
+const char *RSF_DISK_TO_CACHE_WORKING = "/cache/recovery/.disk_to_cache_working"; /* toolbox.c */
+const char *RSF_CACHE_TO_DATA_WORKING = "/cache/recovery/.cache_to_data_working"; /* bridge.c only */
 
-//toolbox push
-//const char *RSF_CACHE_TO_DISK_WORKING = "/cache/recovery/.cache_to_disk_working";
-
-//bridge pull
-const char *RSF_CACHE_TO_DATA_WORKING = "/cache/recovery/.cache_to_data_working";
-
-//bridge push
-//const char *RSF_DATA_TO_CACHE_WORKING = "/cache/recovery/.data_to_cache_working";
-
+const char *RSF_IS_PULL								= "/cache/recovery/.is_pull_session";
 
 //toolbox.c shouldn't read while bridge is writing
 const char *RSF_SENT_FILE_LIST						= "/cache/recovery/.sent_file_list";
 
-const char *RSF_IS_PULL								= "/cache/recovery/.is_pull_session";
-
-
-const char *RSF_BRIDGE_RUN_ONCE 					= "/cache/recovery/.cache_to_data_working";
+//=>] Ready State [<=
 const char *RSF_TOOLBOX_READY						= "/cache/recovery/.toolbox_is_ready";
 const char *RSF_BRIDGE_READY						= "/cache/recovery/.bridge_is_ready";
+
 const char *RSF_ALL_DONE              				= "/data/local/tmp/.farm_done";
 const char *RSF_PANIC              					= "/data/local/tmp/.panic";
 

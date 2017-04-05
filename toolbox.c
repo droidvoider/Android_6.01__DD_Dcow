@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 			return 1;
 		}
 
-	FILE *fpBlock = fpBlock = fopen("/cache/recovery/files.txt","r");
+	FILE *fpBlock = fopen("/cache/recovery/files.txt","r");
    if (fpBlock == NULL) {
     printf("couldn't open /cache/recovery/files.txt was there a copy error reported in logcat by bridge?\n");
     printf("farm binary overwrites dumpstate with bridge then does fork setprop dumpstate\n");
